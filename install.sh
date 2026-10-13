@@ -60,8 +60,12 @@ cat > "$ROOT_DIR/bin/ai" <<'AI_STACK_EMBED_bin_ai'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 [[ ! -f $HOME/.env.ai ]] || source "$HOME/.env.ai"
-provider=${1:-}; mode=${2:-native}
-if (( $# >= 2 )); then shift 2; elif (( $# == 1 )); then shift; fi
+provider=${1:-}; mode=native
+if [[ ${2:-} == native || ${2:-} == api ]]; then
+  mode=$2; shift 2
+elif (( $# > 0 )); then
+  shift
+fi
 case "$provider:$mode" in
   claude:native) exec env -u ANTHROPIC_API_KEY -u ANTHROPIC_AUTH_TOKEN claude "$@" ;;
   codex:native) exec env -u OPENAI_API_KEY codex "$@" ;;
@@ -143,7 +147,7 @@ as_user npm install --global --prefix "$USER_HOME/.local" \
   "@anthropic-ai/claude-code@${CLAUDE_VERSION:-latest}" \
   "@openai/codex@${CODEX_VERSION:-latest}" \
   "@google/gemini-cli@${GEMINI_VERSION:-latest}"
-if ! as_user pipx list --short | awk '{print $1}' | grep -qx aider-chat; then
+if ! as_user pipx list 2>/dev/null | grep -Eq '(^|[[:space:]])aider-chat([[:space:]]|$)'; then
   as_user pipx install "aider-chat${AIDER_VERSION:+==$AIDER_VERSION}"
 fi
 for script in ai ai-login ai-quad; do
@@ -217,6 +221,6 @@ UNIT_EOF
   systemctl is-active --quiet ai-code-server.service
 fi
 printf '\nГотово. Войдите как %s и выполните: ai-login; ai-quad\n' "$TARGET_USER"
-printf 'SSH-ключ добавьте вручную, инструкция — README.md. Web IDE: SSH-туннель; пароль в ~/.config/code-server/config.yaml.\n'
-as_user bash -c 'node --version; npm list -g --prefix "$HOME/.local" --depth=0; pipx list --short' > "$TMP_DIR/versions.txt"
+printf 'SSH-ключ добавьте вручную, инструкция — README.md репозитория. Web IDE: SSH-туннель; пароль в ~/.config/code-server/config.yaml.\n'
+as_user bash -c 'node --version; npm list -g --prefix "$HOME/.local" --depth=0 || true; pipx list || true' > "$TMP_DIR/versions.txt"
 as_user tee "$USER_HOME/.config/ai-stack/installed-versions.txt" < "$TMP_DIR/versions.txt" >/dev/null

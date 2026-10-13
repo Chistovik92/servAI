@@ -1,0 +1,12 @@
+# Секреты и локальные файлы
+.env
+.env.ai
+*.key
+*.pem
+
+# Мусор редакторов и ОС
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
